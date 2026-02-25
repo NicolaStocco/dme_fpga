@@ -45,7 +45,7 @@ module radio_legacy
    // _b signifies bus_clk domain, _r signifies radio_clk domain
 
    wire [63:0] 	 ctrl_tdata_r;
-   wire 	 ctrl_tready_r, ctrl_tvalid_r;
+   wire 	 ctrl_tready_r, ctrl_tvalid_r;i
    wire 	 ctrl_tlast_r;
 
    wire [63:0] 	 resp_tdata_r;
@@ -341,6 +341,32 @@ generate
 endgenerate
 
    // /////////////////////////////////////////////////////////////////////////////////
+   //  DME initialization
+
+   wire signed [15:0] dme_tx_i;
+   wire signed [15:0] dme_tx_q;
+   wire               dme_tx_strobe;
+   
+   // Instantiate your module here (you can put the actual instance anywhere in the file)
+   dme_transponder #(
+       .CLK_RATE_HZ(30_720_000), // MAKE SURE THIS MATCHES YOUR MASTER CLOCK
+       .THRESHOLD(16'd800)
+   ) inst_dme_transponder (
+       .clk(radio_clk),
+       .rst(radio_rst),
+       .rx_i(sample_rx[31:16]),
+       .rx_q(sample_rx[15:0]),
+       .rx_strobe(strobe_rx),
+       .tx_i(dme_tx_i),          // 
+       .tx_q(dme_tx_q),          // 
+       .tx_strobe(dme_tx_strobe) // 
+   );
+
+   // The Multiplexer: Overrides the host PC's TX stream if DME is active
+   wire [31:0] muxed_sample_tx = dme_tx_strobe ? {dme_tx_i, dme_tx_q} : sample_tx;
+   wire        muxed_strobe_tx = dme_tx_strobe ? 1'b1 : strobe_tx;
+
+   // /////////////////////////////////////////////////////////////////////////////////
    //  TX Chain
 
    wire [175:0] txsample_tdata;
@@ -390,7 +416,7 @@ endgenerate
      (.clk(radio_clk), .rst(radio_rst), .clr(1'b0),
       .set_stb(set_stb),.set_addr(set_addr),.set_data(set_data),
       .tx_fe_i(tx_fe_i),.tx_fe_q(tx_fe_q),
-      .sample(sample_tx), .run(run_tx), .strobe(strobe_tx),
+      .sample(muxed_sample_tx), .run(run_tx), .strobe(muxed_strobe_tx),
       .debug(debug_duc_chain) );
 
 `ifdef DELETE_FORMAT_CONVERSION
