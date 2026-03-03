@@ -22,17 +22,17 @@ module dme_transponder #(
     // 1. TIMING PARAMETERS
     // =========================================================================
     // localparam CYCLES_PER_US = CLK_RATE_HZ / 1_000_000; // ! Might lead to truncation issues if not an integer
-    
+
     // Mode Y Interrogation (RX): 36 us spacing
-    localparam RX_SPACING_CYCLES   = (36 * CYCLES_PER_US) / 1_000_000;
-    localparam RX_TOLERANCE_CYCLES = (1 * CYCLES_PER_US) / 1_000_000; // +/- 1us window
+    localparam RX_SPACING_CYCLES   = (36 * CLK_RATE_HZ) / 1_000_000;
+    localparam RX_TOLERANCE_CYCLES = (1 * CLK_RATE_HZ) / 1_000_000; // +/- 1us window
     
     // Total Turnaround Delay: 56 us (User Spec)
     // We subtract fixed processing overhead if necessary, but using raw 56us here.
-    localparam REPLY_DELAY_CYCLES  = (56 * CYCLES_PER_US) / 1_000_000;
+    localparam REPLY_DELAY_CYCLES  = (56 * CLK_RATE_HZ) / 1_000_000;
     
     // Mode Y Reply (TX): 30 us spacing
-    localparam TX_SPACING_CYCLES   = (30 * CYCLES_PER_US) / 1_000_000;
+    localparam TX_SPACING_CYCLES   = (30 * CLK_RATE_HZ) / 1_000_000;
 
     // =========================================================================
     // 2. GAUSSIAN PULSE ROM (The "Real Signal")

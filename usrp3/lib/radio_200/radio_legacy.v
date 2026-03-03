@@ -45,7 +45,7 @@ module radio_legacy
    // _b signifies bus_clk domain, _r signifies radio_clk domain
 
    wire [63:0] 	 ctrl_tdata_r;
-   wire 	 ctrl_tready_r, ctrl_tvalid_r;i
+   wire 	 ctrl_tready_r, ctrl_tvalid_r;
    wire 	 ctrl_tlast_r;
 
    wire [63:0] 	 resp_tdata_r;
@@ -350,7 +350,7 @@ endgenerate
    // Instantiate your module here (you can put the actual instance anywhere in the file)
    dme_transponder #(
        .CLK_RATE_HZ(30_720_000), // MAKE SURE THIS MATCHES YOUR MASTER CLOCK
-       .THRESHOLD(16'd800)
+       .THRESHOLD(16'd3800)
    ) inst_dme_transponder (
        .clk(radio_clk),
        .rst(radio_rst),
