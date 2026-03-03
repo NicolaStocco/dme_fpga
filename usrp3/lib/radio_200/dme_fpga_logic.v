@@ -47,7 +47,7 @@ module dme_transponder #(
 
     // Load the file during Synthesis (and Simulation)
     initial begin
-        $readmemh("dme_pulse.mem", rom_memory);
+        $readmemh("dme_pulse.txt", rom_memory);
     end
 
     // Synchronous Read (Required for BRAM inference on Spartan-6)
