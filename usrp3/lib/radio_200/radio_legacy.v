@@ -340,6 +340,11 @@ generate
 
 endgenerate
 
+   // RX sample tap used by DME logic (declared here so it can be referenced
+   // before the RX chain section without creating implicit nets).
+   wire        strobe_rx;
+   wire [31:0] sample_rx;
+
    // /////////////////////////////////////////////////////////////////////////////////
    //  DME initialization
 
@@ -437,8 +442,6 @@ endgenerate
    //  RX Chain
 
    wire 	full, eob_rx;
-   wire 	strobe_rx;
-   wire [31:0] 	sample_rx;
    wire [31:0] 	  rx_sid;
    wire [11:0] 	  rx_seqnum;
    wire [63:0] rx_tdata_i; wire rx_tlast_i, rx_tvalid_i, rx_tready_i;
