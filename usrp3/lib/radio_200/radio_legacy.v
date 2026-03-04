@@ -355,7 +355,7 @@ endgenerate
    // Instantiate your module here (you can put the actual instance anywhere in the file)
    dme_transponder #(
        .CLK_RATE_HZ(30_720_000), // ! MAKE SURE THIS MATCHES THE MASTER CLOCK
-       .THRESHOLD(16'd3800)      // ! Set this based on the noise floor. This is based on lab measurements with 50 dB of gain.
+       .THRESHOLD(16'd800)      // ! Set this based on the noise floor. This is based on lab measurements with 50 dB of gain.
    ) inst_dme_transponder (
        .clk(radio_clk),
        .rst(radio_rst),
