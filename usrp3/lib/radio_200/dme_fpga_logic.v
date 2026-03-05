@@ -2,7 +2,7 @@
 
 module dme_transponder #(
     parameter CLK_RATE_HZ = 100_000_000,
-    parameter THRESHOLD   = 16'd5000      // ! Adjust based on noise floor. This is based on lab measurements with 50 dB of gain and 
+    parameter THRESHOLD   = 16'd800      // ! Adjust based on noise floor. This is based on lab measurements with 50 dB of gain and 
 )(
     input  wire         clk,
     input  wire         rst,
@@ -25,7 +25,7 @@ module dme_transponder #(
 
     // Mode Y Interrogation (RX): 36 us spacing
     localparam RX_SPACING_CYCLES   = (36 * CLK_RATE_HZ) / 1_000_000;
-    localparam RX_TOLERANCE_CYCLES = (1 * CLK_RATE_HZ) / 1_000_000; // +/- 1us window
+    localparam RX_TOLERANCE_CYCLES = (5 * CLK_RATE_HZ) / 1_000_000; // +/- 5us window // ! Try to lower this if possible. High for testing reasons
     
     // Total Turnaround Delay: 56 us (User Spec)
     // We subtract fixed processing overhead if necessary, but using raw 56us here.
