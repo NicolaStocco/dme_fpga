@@ -207,15 +207,22 @@ generate
         (.clk(radio_clk), .rst(radio_rst), .strobe(set_stb_user), .addr(set_addr_user), .in(set_data_user),
          .out(user_reg_1_value), .changed());
 
+      // User readback mux:
+      //  - addr 0: {user_reg_1_value, user_reg_0_value}
+      //  - addr 1: {32'd0, dme_tx_start_count}  (DME interrogation counter)
       always @* begin
          case(rb_addr_user)
             8'd0 : rb_data_user <= {user_reg_1_value, user_reg_0_value};
+            8'd1 : rb_data_user <= {32'd0, dme_tx_start_count};
             default : rb_data_user <= 64'd0;
          endcase
       end
 
    end else begin    //for USER_SETTINGS == 1
-      always @* rb_data_user <= 64'd0;
+      // When USER_SETTINGS is disabled, still expose the DME counter
+      // on the user readback channel (rb_addr == 7) as:
+      //   {32'd0, dme_tx_start_count}
+      always @* rb_data_user <= {32'd0, dme_tx_start_count};
    end
 endgenerate
 
@@ -351,6 +358,7 @@ endgenerate
    wire signed [15:0] dme_tx_i;
    wire signed [15:0] dme_tx_q;
    wire               dme_tx_strobe;
+   wire [31:0]        dme_tx_start_count;
    
    // Instantiate your module here (you can put the actual instance anywhere in the file)
    dme_transponder #(
@@ -362,9 +370,10 @@ endgenerate
        .rx_i(sample_rx[31:16]),
        .rx_q(sample_rx[15:0]),
        .rx_strobe(strobe_rx),
-       .tx_i(dme_tx_i),          // 
-       .tx_q(dme_tx_q),          // 
-       .tx_strobe(dme_tx_strobe) // 
+       .tx_i(dme_tx_i),
+       .tx_q(dme_tx_q),
+       .tx_strobe(dme_tx_strobe),
+       .tx_start_count(dme_tx_start_count)
    );
 
    // The Multiplexer: Overrides the host PC's TX stream if DME is active

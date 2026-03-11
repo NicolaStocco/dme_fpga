@@ -15,7 +15,10 @@ module dme_transponder #(
     // TX Stream (To Radio DAC)
     output reg signed [15:0] tx_i,
     output reg signed [15:0] tx_q,
-    output reg          tx_strobe
+    output reg          tx_strobe,
+
+    // Counter for number of detected interrogations that lead to a transmission
+    output reg [31:0]   tx_start_count
 );
 
     // =========================================================================
@@ -25,7 +28,7 @@ module dme_transponder #(
 
     // Mode Y Interrogation (RX): 36 us spacing
     localparam RX_SPACING_CYCLES   = (36 * CLK_RATE_HZ) / 1_000_000;
-    localparam RX_TOLERANCE_CYCLES = (5 * CLK_RATE_HZ) / 1_000_000; // +/- 5us window // ! Try to lower this if possible. High for testing reasons
+    localparam RX_TOLERANCE_CYCLES = (15 * CLK_RATE_HZ) / 1_000_000; // +/- 15us window // ! Try to lower this if possible. High for testing reasons
     
     // Total Turnaround Delay: 56 us (User Spec)
     // We subtract fixed processing overhead if necessary, but using raw 56us here.
@@ -99,6 +102,7 @@ module dme_transponder #(
             tx_q <= 0;
             tx_strobe <= 0;
             rom_addr <= 0;
+            tx_start_count <= 0;
         end else begin
             // Default Strobe low unless transmitting
             tx_strobe <= 0;
@@ -133,6 +137,8 @@ module dme_transponder #(
                         // DOUBLE PULSE CONFIRMED
                         timer <= 0;
                         state <= S_TURNAROUND;
+                        // Increment counter each time a valid interrogation leads to a transmission
+                        tx_start_count <= tx_start_count + 1;
                     end
                     // Close window if time passes 36us + tolerance
                     else if (timer > (RX_SPACING_CYCLES + RX_TOLERANCE_CYCLES)) begin
