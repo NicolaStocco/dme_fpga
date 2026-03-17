@@ -168,7 +168,7 @@ module dme_transponder #(
                     rom_addr <= rom_addr + 1;
                     
                     // If ROM finished (using 350 as end of pulse width)
-                    if (rom_addr >= 215) begin // ! Hardcoded pulse width in samples (3.5us at 30.72 MHz)
+                    if (rom_addr >= 511) begin // ! Hardcoded pulse width in samples (3.5us at 30.72 MHz)
                         timer <= 0;
                         state <= S_TX_GAP;
                     end
@@ -180,7 +180,7 @@ module dme_transponder #(
                     
                     timer <= timer + 1;
                     // Note: We subtract pulse duration if timing is measured Leading-to-Leading edge
-                    if (timer >= (TX_SPACING_CYCLES - 215)) begin // ! Hardcoded as well
+                    if (timer >= (TX_SPACING_CYCLES - 511)) begin // ! Hardcoded as well
                         timer <= 0;
                         rom_addr <= 0;
                         state <= S_TX_PULSE_2;
@@ -194,7 +194,7 @@ module dme_transponder #(
                     tx_q <= 0;
                     rom_addr <= rom_addr + 1;
                     
-                    if (rom_addr >= 215) begin // ! Hardcoded pulse width in samples (3.5us at 30.72 MHz)
+                    if (rom_addr >= 511) begin // ! Hardcoded pulse width in samples (3.5us at 30.72 MHz)
                         timer <= 0;
                         state <= S_COOLDOWN;
                     end
