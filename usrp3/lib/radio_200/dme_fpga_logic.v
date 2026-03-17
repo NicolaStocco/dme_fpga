@@ -32,7 +32,8 @@ module dme_transponder #(
     
     // Total Turnaround Delay: 56 us (User Spec)
     // We subtract fixed processing overhead if necessary, but using raw 56us here.
-    localparam REPLY_DELAY_CYCLES  = (56 * CLK_RATE_HZ) / 1_000_000;
+    // To simulate 10 NM range, set to 180 us
+    localparam REPLY_DELAY_CYCLES  = (180 * CLK_RATE_HZ) / 1_000_000;
     
     // Mode Y Reply (TX): 30 us spacing
     localparam TX_SPACING_CYCLES   = (30 * CLK_RATE_HZ) / 1_000_000;
