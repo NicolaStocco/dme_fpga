@@ -95,6 +95,37 @@ module dme_transponder #(
     reg [3:0]  state;
     reg [31:0] timer; // General purpose cycle counter
 
+    // =========================================================================
+    // SQUITTER GENERATOR (16-bit LFSR)
+    // =========================================================================
+    localparam CYCLES_PER_US = CLK_RATE_HZ / 1_000_000;
+    
+    reg [31:0] us_counter = 0;
+    reg tick_1us = 0;
+    
+    reg [15:0] lfsr = 16'hACE1; // Seed MUST be non-zero!
+    // Standard 16-bit Galois LFSR polynomial taps at 16, 14, 13, 11
+    wire lfsr_feedback = lfsr[15] ^ lfsr[13] ^ lfsr[12] ^ lfsr[10];
+
+    always @(posedge clk) begin
+        if (rst) begin
+            us_counter <= 0;
+            lfsr <= 16'hACE1;
+            tick_1us <= 0;
+        end else begin
+            // Generate a 1 microsecond strobe
+            if (us_counter >= (CYCLES_PER_US - 1)) begin
+                us_counter <= 0;
+                tick_1us <= 1'b1;
+                // Shift the LFSR to get a new random number every 1us
+                lfsr <= {lfsr[14:0], lfsr_feedback};
+            end else begin
+                us_counter <= us_counter + 1;
+                tick_1us <= 1'b0;
+            end
+        end
+    end
+
     always @(posedge clk) begin
         if (rst) begin
             state <= S_IDLE;
@@ -109,12 +140,22 @@ module dme_transponder #(
             tx_strobe <= 0;
 
             case (state)
-                // --- 1. SEARCH FOR FIRST PULSE ---
+                // --- 1. SEARCH FOR FIRST PULSE OR FIRE SQUITTER ---
                 S_IDLE: begin
-                    tx_i <= 0; tx_q <= 0;
+                    tx_i <= 0;
+                    tx_q <= 0; // Assuming tx_strobe is continuously assigned 1 elsewhere
+                    
                     if (rx_strobe && pulse_detected) begin
+                        // Real interrogation takes priority!
                         timer <= 0;
                         state <= S_WAIT_P2_WINDOW;
+                    end 
+                    // Squitter logic: 2700 Hz average rate = ~0.27% chance per 1us => 177 out of 65536
+                    //                  800 Hz average rate = ~0.08% chance per 1us =>  52 out of 65536
+                    else if (tick_1us && (lfsr < 52)) begin
+                        timer <= 0;
+                        rom_addr <= 0;
+                        state <= S_TX_PULSE_1; // Re-use the reply logic to send a random pair!
                     end
                 end
 
