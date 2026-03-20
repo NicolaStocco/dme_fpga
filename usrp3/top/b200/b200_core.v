@@ -306,7 +306,7 @@ module b200_core
       .NEW_HB_INTERP(1),
       .NEW_HB_DECIM(1),
       .SOURCE_FLOW_CONTROL(0),
-      .USER_SETTINGS(0),
+      .USER_SETTINGS(1),
       .DEVICE("SPARTAN6")
    ) radio_0 (
       .radio_clk(radio_clk), .radio_rst(radio_rst),
@@ -338,7 +338,7 @@ module b200_core
       .NEW_HB_INTERP(1),
       .NEW_HB_DECIM(1),
       .SOURCE_FLOW_CONTROL(0),
-      .USER_SETTINGS(0),
+      .USER_SETTINGS(1),
       .DEVICE("SPARTAN6")
    ) radio_1 (
       .radio_clk(radio_clk), .radio_rst(radio_rst),
