@@ -372,7 +372,8 @@ endgenerate
        .tx_i(dme_tx_i),
        .tx_q(dme_tx_q),
        .tx_strobe(dme_tx_strobe),
-       .tx_start_count(dme_tx_start_count)
+       .tx_start_count(dme_tx_start_count),
+       .reply_delay_cycles(user_reg_0_value)
    );
 
    // The Multiplexer: Overrides the host PC's TX stream if DME is active
