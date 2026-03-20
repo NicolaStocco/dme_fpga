@@ -18,7 +18,7 @@ module dme_transponder #(
     output reg          tx_strobe,
 
     // Counter for number of detected interrogations that lead to a transmission
-    output reg [31:0]   tx_start_count
+    output reg [31:0]   tx_start_count,
 
     // Dynamic number of cicles for the delay
     input wire [31:0] reply_delay_cycles
