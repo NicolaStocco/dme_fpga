@@ -165,6 +165,9 @@ module radio_legacy
       .debug(debug_radio_ctrl_proc));
 
    reg [63:0]     rb_data_user;
+
+   wire [31:0] user_reg_0_value, user_reg_1_value;
+
 generate
    if (USER_SETTINGS == 1) begin
       wire           set_stb_user;
@@ -197,7 +200,6 @@ generate
       // regs->poke32(0, 0xCAFE);
       // regs->poke32(4, 0xBEEF);
       // std::cout << boost::format("0x%016X") % regs->peek64(0) << std::endl;
-      wire [31:0] user_reg_0_value, user_reg_1_value;
 
       setting_reg #(.my_addr(8'd0), .awidth(8), .width(32)) user_reg_0
         (.clk(radio_clk), .rst(radio_rst), .strobe(set_stb_user), .addr(set_addr_user), .in(set_data_user),
