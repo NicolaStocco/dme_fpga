@@ -201,7 +201,7 @@ generate
       // regs->poke32(4, 0xBEEF);
       // std::cout << boost::format("0x%016X") % regs->peek64(0) << std::endl;
 
-      setting_reg #(.my_addr(8'd0), .awidth(8), .width(32)) user_reg_0
+      setting_reg #(.my_addr(8'd0), .awidth(8), .width(32), .at_reset(32'd3000)) user_reg_0
         (.clk(radio_clk), .rst(radio_rst), .strobe(set_stb_user), .addr(set_addr_user), .in(set_data_user),
          .out(user_reg_0_value), .changed());
 
