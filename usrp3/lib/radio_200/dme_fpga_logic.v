@@ -36,7 +36,7 @@ module dme_transponder #(
     // Total Turnaround Delay: 56 us (User Spec)
     // We subtract fixed processing overhead if necessary, but using raw 56us here.
     // To simulate 10 NM range, set to x us
-    localparam REPLY_DELAY_CYCLES  = (250 * CLK_RATE_HZ) / 1_000_000; // ! Now it's dynamic
+    // localparam REPLY_DELAY_CYCLES  = (250 * CLK_RATE_HZ) / 1_000_000; // ! Now it's dynamic
     
     // Mode Y Reply (TX): 30 us spacing
     localparam TX_SPACING_CYCLES   = (30 * CLK_RATE_HZ) / 1_000_000;
@@ -194,7 +194,7 @@ module dme_transponder #(
                 // --- 4. 56us DELAY (TURNAROUND) ---
                 S_TURNAROUND: begin
                     timer <= timer + 1;
-                    if (timer >= REPLY_DELAY_CYCLES) begin
+                    if (timer >= reply_delay_cycles) begin
                         timer <= 0;
                         rom_addr <= 0; // Reset ROM pointer
                         state <= S_TX_PULSE_1;
