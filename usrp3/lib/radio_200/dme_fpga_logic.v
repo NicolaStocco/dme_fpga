@@ -38,7 +38,7 @@ module dme_transponder #(
     
     // Mode Y Reply (TX): 30 us spacing
     localparam TX_SPACING_CYCLES   = (30 * CLK_RATE_HZ) / 1_000_000;
-    localparam ROM_DEPTH           = 512;
+    localparam ROM_DEPTH           = 1024;
     localparam ROM_LAST_ADDR       = ROM_DEPTH - 1;
     localparam TX_GAP_CYCLES       = (TX_SPACING_CYCLES > ROM_LAST_ADDR) ? (TX_SPACING_CYCLES - ROM_LAST_ADDR) : 1;
     localparam COOLDOWN_CYCLES     = (20 * CLK_RATE_HZ) / 1_000_000;
@@ -47,16 +47,16 @@ module dme_transponder #(
     // 2. GAUSSIAN PULSE ROM (The "Real Signal")
     // =========================================================================
     
-    // 512 entries deep, 16 bits wide
+    // 1024 entries deep, 16 bits wide
     (* RAM_STYLE="BLOCK" *) // Force Xilinx to use BRAM, not logic slices
-    reg signed [15:0] rom_memory [0:511]; 
+    reg signed [15:0] rom_memory [0:1023];
     
-    reg [8:0] rom_addr;
+    reg [9:0] rom_addr;
     reg signed [15:0] rom_data;
 
     // Load the file during Synthesis (and Simulation)
     initial begin
-        $readmemh("dme_pulse.txt", rom_memory);
+        $readmemh("dme_pulse_61.44MSps.txt", rom_memory);
     end
 
     // Synchronous Read (Required for BRAM inference on Spartan-6)
