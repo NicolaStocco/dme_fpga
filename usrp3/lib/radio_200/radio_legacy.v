@@ -201,7 +201,7 @@ generate
       // regs->poke32(4, 0xBEEF);
       // std::cout << boost::format("0x%016X") % regs->peek64(0) << std::endl;
 
-      setting_reg #(.my_addr(8'd0), .awidth(8), .width(32), .at_reset(32'd3000)) user_reg_0
+      setting_reg #(.my_addr(8'd0), .awidth(8), .width(32), .at_reset(32'd6000)) user_reg_0
         (.clk(radio_clk), .rst(radio_rst), .strobe(set_stb_user), .addr(set_addr_user), .in(set_data_user),
          .out(user_reg_0_value), .changed());
 
@@ -363,7 +363,7 @@ endgenerate
    wire [31:0]        dme_tx_start_count;
    
    dme_transponder #(
-       .CLK_RATE_HZ(30_720_000), // ! MAKE SURE THIS MATCHES THE MASTER CLOCK
+      .CLK_RATE_HZ(61_440_000), // ! MAKE SURE THIS MATCHES THE MASTER CLOCK
        .THRESHOLD(16'd800)      // ! Set this based on the noise floor. This is based on lab measurements with 50 dB of gain.
    ) inst_dme_transponder (
        .clk(radio_clk),

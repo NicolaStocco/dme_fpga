@@ -27,8 +27,6 @@ module dme_transponder #(
     // =========================================================================
     // 1. TIMING PARAMETERS
     // =========================================================================
-    // localparam CYCLES_PER_US = CLK_RATE_HZ / 1_000_000; // ! Might lead to truncation issues if not an integer
-
     // Mode Y Interrogation (RX): 36 us spacing
     localparam RX_SPACING_CYCLES   = (36 * CLK_RATE_HZ) / 1_000_000;
     localparam RX_TOLERANCE_CYCLES = (15 * CLK_RATE_HZ) / 1_000_000; // +/- 15us window // ! Try to lower this if possible. High for testing reasons
@@ -40,6 +38,10 @@ module dme_transponder #(
     
     // Mode Y Reply (TX): 30 us spacing
     localparam TX_SPACING_CYCLES   = (30 * CLK_RATE_HZ) / 1_000_000;
+    localparam ROM_DEPTH           = 512;
+    localparam ROM_LAST_ADDR       = ROM_DEPTH - 1;
+    localparam TX_GAP_CYCLES       = (TX_SPACING_CYCLES > ROM_LAST_ADDR) ? (TX_SPACING_CYCLES - ROM_LAST_ADDR) : 1;
+    localparam COOLDOWN_CYCLES     = (20 * CLK_RATE_HZ) / 1_000_000;
 
     // =========================================================================
     // 2. GAUSSIAN PULSE ROM (The "Real Signal")
@@ -101,9 +103,9 @@ module dme_transponder #(
     // =========================================================================
     // SQUITTER GENERATOR (16-bit LFSR)
     // =========================================================================
-    localparam CYCLES_PER_US = CLK_RATE_HZ / 1_000_000;
-    
-    reg [31:0] us_counter = 0;
+    localparam US_HZ = 1_000_000;
+
+    reg [31:0] us_accum = 0;
     reg tick_1us = 0;
     
     reg [15:0] lfsr = 16'hACE1; // Seed MUST be non-zero!
@@ -112,18 +114,18 @@ module dme_transponder #(
 
     always @(posedge clk) begin
         if (rst) begin
-            us_counter <= 0;
+            us_accum <= 0;
             lfsr <= 16'hACE1;
             tick_1us <= 0;
         end else begin
-            // Generate a 1 microsecond strobe
-            if (us_counter >= (CYCLES_PER_US - 1)) begin
-                us_counter <= 0;
+            // Generate an average-accurate 1 us strobe, also for non-integer clk/us.
+            if ((us_accum + US_HZ) >= CLK_RATE_HZ) begin
+                us_accum <= us_accum + US_HZ - CLK_RATE_HZ;
                 tick_1us <= 1'b1;
                 // Shift the LFSR to get a new random number every 1us
                 lfsr <= {lfsr[14:0], lfsr_feedback};
             end else begin
-                us_counter <= us_counter + 1;
+                us_accum <= us_accum + US_HZ;
                 tick_1us <= 1'b0;
             end
         end
@@ -212,8 +214,8 @@ module dme_transponder #(
                     // Advance ROM
                     rom_addr <= rom_addr + 1;
                     
-                    // If ROM finished (using 350 as end of pulse width)
-                    if (rom_addr >= 511) begin // ! Hardcoded pulse width in samples (3.5us at 30.72 MHz)
+                    // If ROM finished
+                    if (rom_addr >= ROM_LAST_ADDR) begin
                         timer <= 0;
                         state <= S_TX_GAP;
                     end
@@ -225,7 +227,7 @@ module dme_transponder #(
                     
                     timer <= timer + 1;
                     // Note: We subtract pulse duration if timing is measured Leading-to-Leading edge
-                    if (timer >= (TX_SPACING_CYCLES - 511)) begin // ! Hardcoded as well
+                    if (timer >= TX_GAP_CYCLES) begin
                         timer <= 0;
                         rom_addr <= 0;
                         state <= S_TX_PULSE_2;
@@ -239,7 +241,7 @@ module dme_transponder #(
                     tx_q <= 0;
                     rom_addr <= rom_addr + 1;
                     
-                    if (rom_addr >= 511) begin // ! Hardcoded pulse width in samples (3.5us at 30.72 MHz)
+                    if (rom_addr >= ROM_LAST_ADDR) begin
                         timer <= 0;
                         state <= S_COOLDOWN;
                     end
@@ -250,7 +252,7 @@ module dme_transponder #(
                     tx_strobe <= 0;
                     tx_i <= 0; tx_q <= 0;
                     timer <= timer + 1;
-                    if (timer > 2000) state <= S_IDLE; // Wait 20us before listening again
+                    if (timer >= COOLDOWN_CYCLES) state <= S_IDLE;
                 end
             endcase
         end
