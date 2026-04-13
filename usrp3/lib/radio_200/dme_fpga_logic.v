@@ -222,7 +222,7 @@ module dme_transponder #(
                     end
                 end
 
-                // --- 6. INTER-PULSE GAP (Wait 30us) ---
+                // --- 6. INTER-PULSE GAP (Wait 12us) ---
                 S_TX_GAP: begin
                     tx_i <= 0; tx_q <= 0; tx_strobe <= 1; // Send zeros to keep DAC active
                     
