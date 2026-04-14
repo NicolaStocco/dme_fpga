@@ -28,36 +28,38 @@ module dme_transponder #(
     // 1. TIMING PARAMETERS
     // =========================================================================
     // Mode X Interrogation (RX): 12 us spacing
-
-    // To avoid an integer overflow or truncation errors, I divide twice by 1000 instead of 1_000_000
-    localparam RX_SPACING_CYCLES   = (12 * (CLK_RATE_HZ / 1_000)) / 1_000;
-    localparam RX_TOLERANCE_CYCLES = (15 * (CLK_RATE_HZ / 1_000)) / 1_000; // +/- 15us window // ! Try to lower this if possible. High for testing reasons
+    localparam RX_SPACING_CYCLES   = (12 * CLK_RATE_HZ) / 1_000_000;
+    localparam RX_TOLERANCE_CYCLES = (3  * CLK_RATE_HZ) / 1_000_000; // +/- 3us window
     
     // Total Turnaround Delay: 56 us (User Spec)
     // We subtract fixed processing overhead if necessary, but using raw 56us here.
     // To simulate 10 NM range, set to x us
     // localparam REPLY_DELAY_CYCLES  = (250 * CLK_RATE_HZ) / 1_000_000; // ! Now it's dynamic
     
-    // Mode Y Reply (TX): 12 us spacing
-    localparam TX_SPACING_CYCLES   = (12 * (CLK_RATE_HZ / 1_000)) / 1_000;
-    localparam ROM_DEPTH           = 1024;
+    // Mode X Reply (TX): 12 us spacing
+    localparam TX_SPACING_CYCLES   = (12 * CLK_RATE_HZ) / 1_000_000;
+    localparam ROM_DEPTH           = 512;
     localparam ROM_LAST_ADDR       = ROM_DEPTH - 1;
-    localparam TX_GAP_CYCLES       = (TX_SPACING_CYCLES > ROM_LAST_ADDR) ? (TX_SPACING_CYCLES - ROM_LAST_ADDR) : 1;
-    localparam COOLDOWN_CYCLES     = (20 * (CLK_RATE_HZ / 1_000)) / 1_000;
+    // DME pulse width is 3.5us nominal; limit playback to that active part.
+    localparam TX_PULSE_CYCLES     = ((35 * CLK_RATE_HZ) + 5_000_000) / 10_000_000;
+    localparam TX_PULSE_SAMPLES    = (TX_PULSE_CYCLES < ROM_DEPTH) ? TX_PULSE_CYCLES : ROM_DEPTH;
+    localparam TX_PULSE_LAST_ADDR  = TX_PULSE_SAMPLES - 1;
+    localparam TX_GAP_CYCLES       = (TX_SPACING_CYCLES > TX_PULSE_LAST_ADDR) ? (TX_SPACING_CYCLES - TX_PULSE_LAST_ADDR) : 1;
+    localparam COOLDOWN_CYCLES     = (20 * CLK_RATE_HZ) / 1_000_000;
     // =========================================================================
     // 2. GAUSSIAN PULSE ROM (The "Real Signal")
     // =========================================================================
     
-    // 1024 entries deep, 16 bits wide
+    // 512 entries deep, 16 bits wide
     (* RAM_STYLE="BLOCK" *) // Force Xilinx to use BRAM, not logic slices
-    reg signed [15:0] rom_memory [0:1023];
+    reg signed [15:0] rom_memory [0:511];
     
-    reg [9:0] rom_addr;
+    reg [8:0] rom_addr;
     reg signed [15:0] rom_data;
 
     // Load the file during Synthesis (and Simulation)
     initial begin
-        $readmemh("dme_pulse_61.44MSps.txt", rom_memory);
+        $readmemh("dme_pulse.txt", rom_memory);
     end
 
     // Synchronous Read (Required for BRAM inference on Spartan-6)
@@ -165,32 +167,37 @@ module dme_transponder #(
                     end
                 end
 
-                // --- 2. WAIT FOR SPECIFIC TIMING (36us) ---
+                // --- 2. WAIT FOR SPECIFIC TIMING (12us) ---
                 S_WAIT_P2_WINDOW: begin
-                    timer <= timer + 1;
-                    // Open detection window slightly before 36us
-                    if (timer >= (RX_SPACING_CYCLES - RX_TOLERANCE_CYCLES)) begin
-                        state <= S_VERIFY_P2;
-                    end
-                    // Timeout
-                    else if (timer > (RX_SPACING_CYCLES + RX_TOLERANCE_CYCLES)) begin
-                        state <= S_IDLE;
+                    // Keep RX timing in sample domain, not raw radio_clk domain.
+                    if (rx_strobe) begin
+                        timer <= timer + 1;
+                        // Open detection window slightly before 12us
+                        if (timer >= (RX_SPACING_CYCLES - RX_TOLERANCE_CYCLES)) begin
+                            state <= S_VERIFY_P2;
+                        end
+                        // Timeout
+                        else if (timer > (RX_SPACING_CYCLES + RX_TOLERANCE_CYCLES)) begin
+                            state <= S_IDLE;
+                        end
                     end
                 end
 
                 // --- 3. CHECK FOR SECOND PULSE ---
                 S_VERIFY_P2: begin
-                    timer <= timer + 1;
-                    if (rx_strobe && pulse_detected) begin
-                        // DOUBLE PULSE CONFIRMED
-                        timer <= 0;
-                        state <= S_TURNAROUND;
-                        // Increment counter each time a valid interrogation leads to a transmission
-                        tx_start_count <= tx_start_count + 1;
-                    end
-                    // Close window if time passes 36us + tolerance
-                    else if (timer > (RX_SPACING_CYCLES + RX_TOLERANCE_CYCLES)) begin
-                        state <= S_IDLE;
+                    if (rx_strobe) begin
+                        timer <= timer + 1;
+                        if (pulse_detected) begin
+                            // DOUBLE PULSE CONFIRMED
+                            timer <= 0;
+                            state <= S_TURNAROUND;
+                            // Increment counter each time a valid interrogation leads to a transmission
+                            tx_start_count <= tx_start_count + 1;
+                        end
+                        // Close window if time passes 12us + tolerance
+                        else if (timer > (RX_SPACING_CYCLES + RX_TOLERANCE_CYCLES)) begin
+                            state <= S_IDLE;
+                        end
                     end
                 end
 
@@ -216,7 +223,7 @@ module dme_transponder #(
                     rom_addr <= rom_addr + 1;
                     
                     // If ROM finished
-                    if (rom_addr >= ROM_LAST_ADDR) begin
+                    if (rom_addr >= TX_PULSE_LAST_ADDR) begin
                         timer <= 0;
                         state <= S_TX_GAP;
                     end
@@ -242,7 +249,7 @@ module dme_transponder #(
                     tx_q <= 0;
                     rom_addr <= rom_addr + 1;
                     
-                    if (rom_addr >= ROM_LAST_ADDR) begin
+                    if (rom_addr >= TX_PULSE_LAST_ADDR) begin
                         timer <= 0;
                         state <= S_COOLDOWN;
                     end
