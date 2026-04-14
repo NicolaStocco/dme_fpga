@@ -12,5 +12,5 @@ RADIO_200_SRCS = $(abspath $(addprefix $(BASE_DIR)/../lib/radio_200/, \
 ./radio_legacy.v \
 ./dme_fpga_logic.v \
 ./dme_pulse.txt \
-./dme_pulse_x_channel \
+./dme_pulse_x_channel.txt \
 ))
