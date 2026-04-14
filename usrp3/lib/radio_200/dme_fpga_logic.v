@@ -27,10 +27,10 @@ module dme_transponder #(
     // =========================================================================
     // 1. TIMING PARAMETERS
     // =========================================================================
-    // Mode Y Interrogation (RX): 36 us spacing
+    // Mode X Interrogation (RX): 12 us spacing
 
     // To avoid an integer overflow or truncation errors, I divide twice by 1000 instead of 1_000_000
-    localparam RX_SPACING_CYCLES   = (36 * (CLK_RATE_HZ / 1_000)) / 1_000;
+    localparam RX_SPACING_CYCLES   = (12 * (CLK_RATE_HZ / 1_000)) / 1_000;
     localparam RX_TOLERANCE_CYCLES = (15 * (CLK_RATE_HZ / 1_000)) / 1_000; // +/- 15us window // ! Try to lower this if possible. High for testing reasons
     
     // Total Turnaround Delay: 56 us (User Spec)
@@ -38,8 +38,8 @@ module dme_transponder #(
     // To simulate 10 NM range, set to x us
     // localparam REPLY_DELAY_CYCLES  = (250 * CLK_RATE_HZ) / 1_000_000; // ! Now it's dynamic
     
-    // Mode Y Reply (TX): 30 us spacing
-    localparam TX_SPACING_CYCLES   = (30 * (CLK_RATE_HZ / 1_000)) / 1_000;
+    // Mode Y Reply (TX): 12 us spacing
+    localparam TX_SPACING_CYCLES   = (12 * (CLK_RATE_HZ / 1_000)) / 1_000;
     localparam ROM_DEPTH           = 1024;
     localparam ROM_LAST_ADDR       = ROM_DEPTH - 1;
     localparam TX_GAP_CYCLES       = (TX_SPACING_CYCLES > ROM_LAST_ADDR) ? (TX_SPACING_CYCLES - ROM_LAST_ADDR) : 1;
