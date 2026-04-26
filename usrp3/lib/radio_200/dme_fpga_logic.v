@@ -182,7 +182,7 @@ module dme_transponder #(
                     timer <= timer + 1;
                     if (rx_strobe && pulse_detected) begin
                         // DOUBLE PULSE CONFIRMED
-                        timer <= 0;
+                        // timer <= 0;
                         state <= S_TURNAROUND;
                         // Increment counter each time a valid interrogation leads to a transmission
                         tx_start_count <= tx_start_count + 1;
