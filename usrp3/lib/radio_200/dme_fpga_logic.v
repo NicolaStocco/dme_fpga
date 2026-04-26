@@ -140,12 +140,14 @@ module dme_transponder #(
             timer <= 0;
             tx_i <= 0;
             tx_q <= 0;
-            tx_strobe <= 0;
+            tx_strobe <= 1;
             rom_addr <= 0;
             tx_start_count <= 0;
         end else begin
             // Default Strobe low unless transmitting
-            tx_strobe <= 0;
+            tx_strobe <= 1;
+            tx_i <= 0;
+            tx_q <= 0;
 
             case (state)
                 // --- 1. SEARCH FOR FIRST PULSE OR FIRE SQUITTER ---
@@ -189,7 +191,6 @@ module dme_transponder #(
                         timer <= timer + 1;
                         if (pulse_detected) begin
                             // DOUBLE PULSE CONFIRMED
-                            timer <= 0;
                             state <= S_TURNAROUND;
                             // Increment counter each time a valid interrogation leads to a transmission
                             tx_start_count <= tx_start_count + 1;
@@ -212,9 +213,7 @@ module dme_transponder #(
                 end
 
                 // --- 5. TRANSMIT PULSE 1 (Gaussian) ---
-                S_TX_PULSE_1: begin
-                    tx_strobe <= 1;
-                    
+                S_TX_PULSE_1: begin                    
                     // Drive I/Q with ROM data (Real signal only on I, Q=0)
                     tx_i <= rom_data;
                     tx_q <= 0;
@@ -231,7 +230,6 @@ module dme_transponder #(
 
                 // --- 6. INTER-PULSE GAP (Wait 12us) ---
                 S_TX_GAP: begin
-                    tx_i <= 0; tx_q <= 0; tx_strobe <= 1; // Send zeros to keep DAC active
                     
                     timer <= timer + 1;
                     // Note: We subtract pulse duration if timing is measured Leading-to-Leading edge
@@ -257,7 +255,7 @@ module dme_transponder #(
 
                 // --- 8. COOLDOWN / DEAD TIME ---
                 S_COOLDOWN: begin
-                    tx_strobe <= 0;
+                    tx_strobe <= 1;
                     tx_i <= 0; tx_q <= 0;
                     timer <= timer + 1;
                     if (timer >= COOLDOWN_CYCLES) state <= S_IDLE;
