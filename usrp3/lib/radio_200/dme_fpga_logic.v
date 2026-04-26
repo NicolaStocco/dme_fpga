@@ -138,18 +138,17 @@ module dme_transponder #(
             timer <= 0;
             tx_i <= 0;
             tx_q <= 0;
-            tx_strobe <= 0;
+            tx_strobe <= 1;
             rom_addr <= 0;
             tx_start_count <= 0;
         end else begin
-            // Default Strobe low unless transmitting
-            tx_strobe <= 0;
+            tx_strobe <= 1;
+            tx_i <= 0;
+            tx_q <= 0;
 
             case (state)
                 // --- 1. SEARCH FOR FIRST PULSE OR FIRE SQUITTER ---
                 S_IDLE: begin
-                    tx_i <= 0;
-                    tx_q <= 0; // Assuming tx_strobe is continuously assigned 1 elsewhere
                     
                     if (rx_strobe && pulse_detected) begin
                         // Real interrogation takes priority!
@@ -224,7 +223,6 @@ module dme_transponder #(
 
                 // --- 6. INTER-PULSE GAP (Wait 30us) ---
                 S_TX_GAP: begin
-                    tx_i <= 0; tx_q <= 0; tx_strobe <= 1; // Send zeros to keep DAC active
                     
                     timer <= timer + 1;
                     // Note: We subtract pulse duration if timing is measured Leading-to-Leading edge
@@ -250,8 +248,6 @@ module dme_transponder #(
 
                 // --- 8. COOLDOWN / DEAD TIME ---
                 S_COOLDOWN: begin
-                    tx_strobe <= 0;
-                    tx_i <= 0; tx_q <= 0;
                     timer <= timer + 1;
                     if (timer >= COOLDOWN_CYCLES) state <= S_IDLE;
                 end
