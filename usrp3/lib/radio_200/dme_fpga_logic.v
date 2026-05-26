@@ -162,7 +162,7 @@ module dme_transponder #(
                     end 
                     // Squitter logic: 2700 Hz average rate = ~0.27% chance per 1us => 177 out of 65536
                     //                  800 Hz average rate = ~0.08% chance per 1us =>  52 out of 65536
-                    else if (tick_1us && (lfsr < 52)) begin
+                    else if (tick_1us && (lfsr < 0)) begin
                         timer <= 0;
                         rom_addr <= 0;
                         state <= S_TX_PULSE_1; // Re-use the reply logic to send a random pair!
